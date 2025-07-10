@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 from datetime import datetime
+import os
 
 st.set_page_config(page_title="Cultural Reasoning Benchmark", layout="wide")
 st.title("🧠 Multilingual Cultural Reasoning Benchmark")
@@ -56,6 +57,12 @@ if st.button("✅ Add to Dataset"):
         "notes": notes,
         "output": model_output
     }
+    # Append to file for persistence
+    output_dir = "data"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "benchmark_outputs.jsonl")
+    with open(output_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(row) + "\n")
     st.session_state.jsonl_rows.append(row)
     st.success("Scored output added to dataset ✅")
 
