@@ -1,7 +1,46 @@
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 import streamlit as st
 import json
 from datetime import datetime
 import os
+
+# --- Authentication setup ---
+# Load credentials and cookie settings from Streamlit secrets
+credentials = {
+    "usernames": {
+        username: {
+            "email": email,
+            "name": name,
+            "password": hash
+        } for username, email, name, hash in zip(
+            st.secrets["credentials"]["usernames"],
+            st.secrets["credentials"]["emails"],
+            st.secrets["credentials"]["names"],
+            st.secrets["credentials"]["password_hashes"]
+        )
+    }
+}
+
+cookie = {
+    "name": st.secrets["cookie"]["name"],
+    "key": st.secrets["cookie"]["key"],
+    "expiry_days": st.secrets["cookie"]["expiry_days"]
+}
+
+authenticator = stauth.Authenticate(
+    credentials, cookie["name"], cookie["key"], cookie["expiry_days"]
+)
+
+name, authentication_status, username = authenticator.login("Login", "main")
+
+if authentication_status is False:
+    st.error("Username/password is incorrect")
+    st.stop()
+elif authentication_status is None:
+    st.warning("Please enter your username and password")
+    st.stop()
 
 st.set_page_config(page_title="Cultural Reasoning Benchmark", layout="wide")
 st.title("🧠 Multilingual Cultural Reasoning Benchmark")
@@ -71,3 +110,5 @@ if st.session_state.jsonl_rows:
     file_name = f"benchmark_outputs_{datetime.now().strftime('%Y%m%d_%H%M')}.jsonl"
     jsonl_data = "\n".join(json.dumps(row) for row in st.session_state.jsonl_rows)
     st.download_button("⬇️ Download JSONL", jsonl_data, file_name, mime="application/json")
+
+authenticator.logout("Logout", "sidebar")
